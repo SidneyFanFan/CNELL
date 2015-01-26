@@ -166,7 +166,7 @@ public class FileUtil {
 
 	}
 
-	public static void exportHashMapByEquation(HashMap<?,?> map,
+	public static void exportHashMapByEquation(HashMap<?, ?> map,
 			String exportPath) {
 		try {
 			FileWriter fw = new FileWriter(exportPath);
@@ -176,6 +176,35 @@ public class FileUtil {
 			}
 			fw.flush();
 			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public static void mergeDirectoryToSingleFile(String directoryPath,
+			String exportPath) {
+		File file = new File(directoryPath);
+		try {
+			FileWriter writer = new FileWriter(exportPath);
+			if (file.isDirectory()) {
+				File[] dirFile = file.listFiles();
+				for (File f : dirFile) {
+					if (f.isFile()) {
+						BufferedReader reader = new BufferedReader(
+								new FileReader(f));
+						while (reader.ready()) {
+							writer.write(reader.readLine());
+							writer.write("\n");
+						}
+						reader.close();
+					}
+				}
+			}
+			writer.flush();
+			writer.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

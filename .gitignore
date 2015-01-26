@@ -1,3 +1,4 @@
 data/
 lib/
 log/
+*.class

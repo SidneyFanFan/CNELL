@@ -26,12 +26,15 @@ public class EntityExtractor {
 	public static void main(String[] args) {
 		String taggedDocPath = "data/newsData/taggedNews.txt";
 		String categoryPath = "data/baidubaike/category_simple.txt";
-		String entityPath = "data/newsData/";
+		String entityPath = "data/newsData/entityExtraction/";
 
 		EntityExtractor rextor = new EntityExtractor(categoryPath);
+		// load tagged file
 		rextor.loadFile(taggedDocPath);
-		rextor.extractEntities(categoryPath, entityPath);
-
+		// extract and make co-occurrence
+		rextor.extractEntities(entityPath);
+		// merge files
+		rextor.mergeFiles(entityPath);
 	}
 
 	public EntityExtractor(String categoryPath) {
@@ -46,7 +49,7 @@ public class EntityExtractor {
 		}
 	}
 
-	public void extractEntities(String categoryPath, String entityPath) {
+	public void extractEntities(String entityPath) {
 		String link;
 		List<String> lines;
 		String line;
@@ -71,42 +74,62 @@ public class EntityExtractor {
 			logger.log(Level.INFO, String.format(
 					"Extracts %d entities from %s", cnews.getAllEntities()
 							.size(), link));
-
-		}
-		// export entity
-		try {
-			// write entities news by news
-			writeEntitiesNewsByNews(entityPath);
-			// write entities line by line
-			writeEntitiesLineByLine(entityPath);
-			// write co-occurrence line by line
-			writeCoOccurrenceLineByLine(entityPath);
-		} catch (IOException e) {
-			e.printStackTrace();
+			// export entity
+			try {
+				// write entities news by news
+				writeEntitiesNewsByNews(cnews, entityPath);
+				// write entities line by line
+				writeEntitiesLineByLine(cnews, entityPath);
+				// write co-occurrence line by line
+				writeCoOccurrenceLineByLine(cnews, entityPath);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
-	private void writeEntitiesNewsByNews(String entityPath) throws IOException {
-		FileWriter fw = new FileWriter(entityPath + "entitiesNewsByNews.txt");
-		for (CNews cnews : fileContent) {
-			fw.write(cnews.getLink());
-			fw.write("\n");
-			fw.write(cnews.getAllEntities().toString());
-			fw.write("\n");
-		}
+	private void mergeFiles(String entityPath) {
+		// merge line by line directory
+		String lineByLineDirectoryPath = String.format("%slineByLine",
+				entityPath);
+		String lineByLineExport = String.format("%sentitiesLineByLine.txt",
+				entityPath);
+		FileUtil.mergeDirectoryToSingleFile(lineByLineDirectoryPath,
+				lineByLineExport);
+
+		String cooccurrencelineByLineDirectoryPath = String.format(
+				"%sco-occurrence", entityPath);
+		String cooccurrencelineByLineExportPath = String.format(
+				"%sco-occurrenceLineByLine.txt", entityPath);
+		FileUtil.mergeDirectoryToSingleFile(
+				cooccurrencelineByLineDirectoryPath,
+				cooccurrencelineByLineExportPath);
+
+	}
+
+	private void writeEntitiesNewsByNews(CNews cnews, String entityPath)
+			throws IOException {
+		FileWriter fw = new FileWriter(String.format("%snewsByNews/%s.txt",
+				entityPath, cnews.getLink()));
+		fw.write(cnews.getLink());
+		fw.write("\n");
+		fw.write(cnews.getAllEntities().toString());
+		fw.write("\n");
 		fw.flush();
 		fw.close();
 
 	}
 
-	private void writeEntitiesLineByLine(String entityPath) throws IOException {
-		FileWriter fw = new FileWriter(entityPath + "entitiesLineByLine.txt");
-		for (CNews cnews : fileContent) {
-			fw.write(cnews.getLink());
+	private void writeEntitiesLineByLine(CNews cnews, String entityPath)
+			throws IOException {
+		FileWriter fw = new FileWriter(String.format("%slineByLine/%s.txt",
+				entityPath, cnews.getLink()));
+		fw.write(cnews.getLink());
+		fw.write("\n");
+		for (String line : cnews.getBody()) {
+			fw.write(line);
 			fw.write("\n");
-			for (String line : cnews.getBody()) {
-				fw.write(line);
-				fw.write("\n");
+			if (cnews.getEntitiesInLine().containsKey(line)) {
 				fw.write(cnews.getEntitiesInLine().get(line).toString());
 				fw.write("\n");
 			}
@@ -115,37 +138,35 @@ public class EntityExtractor {
 		fw.close();
 	}
 
-	private void writeCoOccurrenceLineByLine(String entityPath)
+	private void writeCoOccurrenceLineByLine(CNews cnews, String entityPath)
 			throws IOException {
-		FileWriter fw = new FileWriter(entityPath
-				+ "co-occrrenceLineByLine.txt");
+		FileWriter fw = new FileWriter(String.format("%sco-occurrence/%s.txt",
+				entityPath, cnews.getLink()));
 		HashMap<String, Integer> cooccurrenceMap = new HashMap<String, Integer>();
-		for (CNews cnews : fileContent) {
-			fw.write(cnews.getLink());
-			fw.write("\n");
-			for (String line : cnews.getBody()) {
-				HashMap<String, Integer> localCoMap = generateCoOccurrence(cnews
-						.getEntitiesInLine().get(line));
-				// merge
-				for (Entry<String, Integer> en : localCoMap.entrySet()) {
-					String key = en.getKey();
-					Integer localValue = en.getValue();
-					Integer oldValue = cooccurrenceMap.get(key);
-					if (oldValue != null) {
-						cooccurrenceMap.put(key, localValue + oldValue);
-					} else {
-						cooccurrenceMap.put(key, localValue);
-					}
+		fw.write(cnews.getLink());
+		fw.write("\n");
+		for (String line : cnews.getBody()) {
+			HashMap<String, Integer> localCoMap = generateCoOccurrence(cnews
+					.getEntitiesInLine().get(line));
+			// merge
+			for (Entry<String, Integer> en : localCoMap.entrySet()) {
+				String key = en.getKey();
+				Integer localValue = en.getValue();
+				Integer oldValue = cooccurrenceMap.get(key);
+				if (oldValue != null) {
+					cooccurrenceMap.put(key, localValue + oldValue);
+				} else {
+					cooccurrenceMap.put(key, localValue);
 				}
 			}
-			// convert to list
-			List<Entry<String, Integer>> coList = DataUtil
-					.convertMapToSortedList(cooccurrenceMap);
-			for (int i = 0; i < coList.size(); i++) {
-				if (coList.get(i).getValue().intValue() > 4) {
-					fw.write(coList.get(i).toString());
-					fw.write("\n");
-				}
+		}
+		// convert to list
+		List<Entry<String, Integer>> coList = DataUtil
+				.convertMapToSortedList(cooccurrenceMap);
+		for (int i = 0; i < coList.size(); i++) {
+			if (coList.get(i).getValue().intValue() > cnews.getBody().size() / 2) {
+				fw.write(coList.get(i).toString());
+				fw.write("\n");
 			}
 		}
 		fw.flush();
@@ -168,6 +189,11 @@ public class EntityExtractor {
 			ett1 = entities[i];
 			for (int j = i + 1; j < entities.length; j++) {
 				ett2 = entities[j];
+				if (ett1.contains(ett2) || ett2.contains(ett1)) {
+					// it is possible that AB and A are extracted
+					// but AB contains A
+					continue;
+				}
 				if (ett1.compareTo(ett2) < 0) {
 					pair = String.format("(%s,%s)", ett1, ett2);
 				} else {
@@ -296,17 +322,22 @@ public class EntityExtractor {
 		List<String> lines = null;
 		List<String> originLines = FileUtil.readFileByLine(filePath);
 		int count = 0;
+		int startFrom = 3;
+		int endAt = 10;
 		String link = null;
 		for (String line : originLines) {
 			if (line.endsWith(".html")) {
 				if (lines != null && link != null) {
-					logger.log(Level.INFO, String.format("load news: %s", line));
-					fileContent.add(new CNews(link, lines));
-					count++;
-					if (count == 50) {
+					if (count > startFrom) {
+						fileContent.add(new CNews(link, lines));
+						logger.log(Level.INFO,
+								String.format("load news: %s", link));
+					}
+					if (count >= endAt) {
 						break;
 					}
 				}
+				count++;
 				lines = new ArrayList<String>();
 				link = line;
 			} else {
