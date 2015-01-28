@@ -74,7 +74,7 @@ public class PosTagger {
 					fw.write("\n");
 				} else {
 					line = line.substring(1, line.length() - 1);
-					list = tagArray(line.split(" "));
+					list = tagArray(line.split(", "));
 					fw.write(list.toString());
 					fw.write("\n");
 				}
@@ -88,8 +88,8 @@ public class PosTagger {
 	}
 
 	public static void main(String[] args) {
-		String segDocPath = "data/newsData/newsSeg.txt";
-		String taggedDocPath = "data/newsData/taggedNews.txt";
+		String segDocPath = "data/newsData/segmentation/150118_seg_revise.txt";
+		String taggedDocPath = "data/newsData/tagged/150118_tag_revise.txt";
 		PosTagger tagger = new PosTagger(PosTagger.CHINESE);
 		tagger.tagSegFile(segDocPath, taggedDocPath);
 	}

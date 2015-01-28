@@ -1,6 +1,7 @@
 package experiments;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -13,6 +14,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import basic.CNews;
 import util.DataUtil;
 import util.FileUtil;
 import util.LoggerUtil;
@@ -24,17 +26,16 @@ public class EntityExtractor {
 	private String categoryPath;
 
 	public static void main(String[] args) {
-		String taggedDocPath = "data/newsData/taggedNews.txt";
+		String taggedDocPath = "data/newsData/tagged/150120_tag.txt";
 		String categoryPath = "data/baidubaike/category_simple.txt";
-		String entityPath = "data/newsData/entityExtraction/";
+		String entityPath = "data/newsData/entityExtraction";
 
 		EntityExtractor rextor = new EntityExtractor(categoryPath);
-		// load tagged file
-		rextor.loadFile(taggedDocPath);
+
 		// extract and make co-occurrence
-		rextor.extractEntities(entityPath);
+		rextor.extractEntities(taggedDocPath, entityPath);
 		// merge files
-		rextor.mergeFiles(entityPath);
+		// rextor.mergeFiles(entityPath);
 	}
 
 	public EntityExtractor(String categoryPath) {
@@ -49,11 +50,16 @@ public class EntityExtractor {
 		}
 	}
 
-	public void extractEntities(String entityPath) {
+	public void extractEntities(String taggedPath, String entityPath) {
 		String link;
 		List<String> lines;
 		String line;
 		HashSet<String> entitySet;
+
+		// load tagged file
+		loadFile(taggedPath);
+		// mkdir
+		entityPath = makeDirectory(taggedPath, entityPath);
 
 		if (fileContent == null) {
 			logger.log(Level.WARNING, "No file loaded");
@@ -82,25 +88,88 @@ public class EntityExtractor {
 				writeEntitiesLineByLine(cnews, entityPath);
 				// write co-occurrence line by line
 				writeCoOccurrenceLineByLine(cnews, entityPath);
+				// merge
+				mergeFiles(entityPath);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			System.gc();
 		}
+	}
+
+	private void loadFile(String filePath) {
+		fileContent = new ArrayList<CNews>();
+		List<String> lines = null;
+		List<String> originLines = FileUtil.readFileByLine(filePath);
+		if (originLines == null) {
+			logger.log(Level.WARNING,
+					String.format("Failed to load file: %s", filePath));
+			return;
+		}
+
+		int count = 0;
+		int startFrom = 0;
+		int endAt = 1;
+		String link = null;
+		for (String line : originLines) {
+			if (line.endsWith("html")) {
+				if (lines != null && link != null) {
+					if (count > startFrom) {
+						fileContent.add(new CNews(link, lines));
+						logger.log(Level.INFO,
+								String.format("load news: %s", link));
+					}
+					if (count >= endAt) {
+						break;
+					}
+				}
+				count++;
+				lines = new ArrayList<String>();
+				link = line;
+			} else {
+				lines.add(line.substring(1, line.length() - 1));
+			}
+		}
+		logger.log(Level.INFO, String.format("Finish load file: %s", filePath));
+	}
+
+	private String makeDirectory(String taggedPath, String entityPath) {
+		// parse
+		int pos = taggedPath.indexOf("_tag");
+		String name = taggedPath.substring(pos - 6, pos);
+		String dir = String.format("%s/%s", entityPath, name);
+		File file = new File(dir);
+		if (!file.exists()) {
+			file.mkdirs();
+		}
+		file = new File(String.format("%s/newsByNews", dir));
+		if (!file.exists()) {
+			file.mkdirs();
+		}
+		file = new File(String.format("%s/lineByLine", dir));
+		if (!file.exists()) {
+			file.mkdirs();
+		}
+		file = new File(String.format("%s/co-occurrence", dir));
+		if (!file.exists()) {
+			file.mkdirs();
+		}
+		return dir;
 	}
 
 	private void mergeFiles(String entityPath) {
 		// merge line by line directory
-		String lineByLineDirectoryPath = String.format("%slineByLine",
+		String lineByLineDirectoryPath = String.format("%s/lineByLine",
 				entityPath);
-		String lineByLineExport = String.format("%sentitiesLineByLine.txt",
+		String lineByLineExport = String.format("%s/sentitiesLineByLine.txt",
 				entityPath);
 		FileUtil.mergeDirectoryToSingleFile(lineByLineDirectoryPath,
 				lineByLineExport);
 
 		String cooccurrencelineByLineDirectoryPath = String.format(
-				"%sco-occurrence", entityPath);
+				"%s/co-occurrence", entityPath);
 		String cooccurrencelineByLineExportPath = String.format(
-				"%sco-occurrenceLineByLine.txt", entityPath);
+				"%s/co-occurrenceLineByLine.txt", entityPath);
 		FileUtil.mergeDirectoryToSingleFile(
 				cooccurrencelineByLineDirectoryPath,
 				cooccurrencelineByLineExportPath);
@@ -109,7 +178,7 @@ public class EntityExtractor {
 
 	private void writeEntitiesNewsByNews(CNews cnews, String entityPath)
 			throws IOException {
-		FileWriter fw = new FileWriter(String.format("%snewsByNews/%s.txt",
+		FileWriter fw = new FileWriter(String.format("%s/newsByNews/%s.txt",
 				entityPath, cnews.getLink()));
 		fw.write(cnews.getLink());
 		fw.write("\n");
@@ -122,7 +191,7 @@ public class EntityExtractor {
 
 	private void writeEntitiesLineByLine(CNews cnews, String entityPath)
 			throws IOException {
-		FileWriter fw = new FileWriter(String.format("%slineByLine/%s.txt",
+		FileWriter fw = new FileWriter(String.format("%s/lineByLine/%s.txt",
 				entityPath, cnews.getLink()));
 		fw.write(cnews.getLink());
 		fw.write("\n");
@@ -140,7 +209,7 @@ public class EntityExtractor {
 
 	private void writeCoOccurrenceLineByLine(CNews cnews, String entityPath)
 			throws IOException {
-		FileWriter fw = new FileWriter(String.format("%sco-occurrence/%s.txt",
+		FileWriter fw = new FileWriter(String.format("%s/co-occurrence/%s.txt",
 				entityPath, cnews.getLink()));
 		HashMap<String, Integer> cooccurrenceMap = new HashMap<String, Integer>();
 		fw.write(cnews.getLink());
@@ -163,11 +232,11 @@ public class EntityExtractor {
 		// convert to list
 		List<Entry<String, Integer>> coList = DataUtil
 				.convertMapToSortedList(cooccurrenceMap);
-		for (int i = 0; i < coList.size(); i++) {
-			if (coList.get(i).getValue().intValue() > cnews.getBody().size() / 2) {
-				fw.write(coList.get(i).toString());
-				fw.write("\n");
-			}
+		int num = coList.size() > 5 ? 5 : coList.size();
+		for (int i = 0; i < num; i++) {
+			// only top 5
+			fw.write(coList.get(i).toString());
+			fw.write("\n");
 		}
 		fw.flush();
 		fw.close();
@@ -317,82 +386,4 @@ public class EntityExtractor {
 		return false;
 	}
 
-	private void loadFile(String filePath) {
-		fileContent = new ArrayList<CNews>();
-		List<String> lines = null;
-		List<String> originLines = FileUtil.readFileByLine(filePath);
-		int count = 0;
-		int startFrom = 3;
-		int endAt = 10;
-		String link = null;
-		for (String line : originLines) {
-			if (line.endsWith(".html")) {
-				if (lines != null && link != null) {
-					if (count > startFrom) {
-						fileContent.add(new CNews(link, lines));
-						logger.log(Level.INFO,
-								String.format("load news: %s", link));
-					}
-					if (count >= endAt) {
-						break;
-					}
-				}
-				count++;
-				lines = new ArrayList<String>();
-				link = line;
-			} else {
-				lines.add(line.substring(1, line.length() - 1));
-			}
-		}
-		logger.log(Level.INFO, String.format("Finish load file: %s", filePath));
-	}
-
-	protected class CNews {
-		private String link;
-		private List<String> body;
-		private HashSet<String> allEntities;
-		/* map: line=[set of entity] */
-		private HashMap<String, HashSet<String>> entitiesInLine;
-
-		CNews(String link, List<String> body) {
-			this.link = link;
-			this.body = body;
-			this.allEntities = new HashSet<String>();
-			this.entitiesInLine = new HashMap<String, HashSet<String>>();
-		}
-
-		public String getLink() {
-			return link;
-		}
-
-		public void setLink(String link) {
-			this.link = link;
-		}
-
-		public List<String> getBody() {
-			return body;
-		}
-
-		public void setBody(List<String> body) {
-			this.body = body;
-		}
-
-		public HashSet<String> getAllEntities() {
-			return allEntities;
-		}
-
-		public void setAllEntities(HashSet<String> allEntities) {
-			this.allEntities = allEntities;
-		}
-
-		public HashMap<String, HashSet<String>> getEntitiesInLine() {
-			return entitiesInLine;
-		}
-
-		public void setEntitiesInLine(
-				HashMap<String, HashSet<String>> entitiesInLine) {
-			this.entitiesInLine = entitiesInLine;
-		}
-
-	}
 }

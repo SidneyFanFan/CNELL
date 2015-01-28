@@ -72,7 +72,8 @@ public class Segmentor {
 				for (String seg : texts) {
 					List<String> segmented = segmenter.segmentString(seg);
 					list.add(segmented);
-					fw.write(segmented.toString().replace(",", ""));
+					// fw.write(segmented.toString().replace(",", ""));
+					fw.write(segmented.toString());
 					fw.write("\n");
 				}
 				segmentMap.put(title, list);
@@ -86,16 +87,16 @@ public class Segmentor {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
 
 	public HashMap<String, List<List<String>>> getSegmentMap() {
 		return segmentMap;
 	}
-	
-	public static void main(String[] args){
-		String jsonPath = "data/newsData/news.json";
-		String segDocPath = "data/newsData/newsSeg.txt";
+
+	public static void main(String[] args) {
+		String jsonPath = "data/newsData/source/150118.json";
+		String segDocPath = "data/newsData/segmentation/150118_seg.txt";
 		Segmentor segmentor = new Segmentor();
 		segmentor.segment(jsonPath, segDocPath);
 	}

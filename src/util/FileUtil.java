@@ -142,8 +142,10 @@ public class FileUtil {
 			br.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
+			return null;
 		} catch (IOException e) {
 			e.printStackTrace();
+			return null;
 		}
 		return content;
 	}
