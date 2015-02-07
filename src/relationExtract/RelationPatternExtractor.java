@@ -1,4 +1,4 @@
-package experiments;
+package relationExtract;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

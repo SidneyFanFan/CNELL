@@ -13,10 +13,13 @@ public class RelationInstance {
 	private CNWord arg1;
 	private CNWord arg2;
 
-	public RelationInstance(CNWord arg1, CNWord arg2) {
+	private int weight;
+
+	public RelationInstance(CNWord arg1, CNWord arg2, int weight) {
 		super();
 		this.arg1 = arg1;
 		this.arg2 = arg2;
+		this.weight = weight;
 	}
 
 	public CNWord getArg1() {
@@ -27,15 +30,25 @@ public class RelationInstance {
 		return arg2;
 	}
 
+	public int getWeight() {
+		return weight;
+	}
+
+	@Override
+	public String toString() {
+		return String.format("(%s, %s)", arg1.toString(), arg2.toString());
+	}
+
 	public static RelationInstance parse(String str) {
-		String regex = "^\\[(.*)\\]\\((.*), (.*)\\)$";
+		String regex = "^\\[(.*)\\]\\((.*), (.*)\\)=(.*)$";
 		Pattern pattern = Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(str);
 		boolean ret = matcher.find();
 		if (ret) {
 			CNWord arg1 = CNWord.parse(matcher.group(2));
 			CNWord arg2 = CNWord.parse(matcher.group(3));
-			return new RelationInstance(arg1, arg2);
+			int weight = Integer.parseInt(matcher.group(4));
+			return new RelationInstance(arg1, arg2, weight);
 		}
 		return null;
 	}
@@ -115,6 +128,7 @@ public class RelationInstance {
 		if ((hasNR || hasNN || hasVV) && tokens.size() <= 5) {
 			sentence = String.format("%s(%s, %s)", tokens.toString(),
 					lineSplit[before], lineSplit[after]);
+			System.out.println("Extract relationPattern: " + sentence);
 			return sentence;
 		}
 		return null;

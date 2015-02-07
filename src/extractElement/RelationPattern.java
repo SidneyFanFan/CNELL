@@ -12,12 +12,14 @@ public class RelationPattern implements CNRelation,
 	private String pattern;
 	private String c1;
 	private String c2;
+	private int weight;
 
-	public RelationPattern(String pattern, String tag1, String tag2) {
+	public RelationPattern(String pattern, String c1, String c2, int weight) {
 		super();
 		this.pattern = pattern;
-		this.c1 = tag1;
-		this.c2 = tag2;
+		this.c1 = c1;
+		this.c2 = c2;
+		this.weight = weight;
 	}
 
 	public String getPattern() {
@@ -32,8 +34,16 @@ public class RelationPattern implements CNRelation,
 		return c2;
 	}
 
+	public int getWeight() {
+		return weight;
+	}
+
 	@Override
 	public String toString() {
+		return String.format("[%s](%s,%s)=%d", pattern, c1, c2, weight);
+	}
+
+	public String getPatternString() {
 		return String.format("[%s](%s,%s)", pattern, c1, c2);
 	}
 
@@ -66,6 +76,7 @@ public class RelationPattern implements CNRelation,
 	public static RelationPattern parse(String str) {
 		String c1, c2;
 		String pattern;
+		int weight;
 		String regex = "^\\[(.*)\\]\\((((.*)\\/(.*)),((.*)\\/(.*)))\\)=(.*)$";
 		Pattern p = Pattern.compile(regex);
 		Matcher matcher = p.matcher(str);
@@ -74,7 +85,8 @@ public class RelationPattern implements CNRelation,
 			pattern = matcher.group(1);
 			c1 = matcher.group(5);
 			c2 = matcher.group(8);
-			return new RelationPattern(pattern, c1, c2);
+			weight = Integer.parseInt(matcher.group(9));
+			return new RelationPattern(pattern, c1, c2, weight);
 		}
 		return null;
 	}

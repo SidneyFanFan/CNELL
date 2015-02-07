@@ -212,4 +212,27 @@ public class FileUtil {
 		}
 
 	}
+
+	public static void mergeFiles(List<String> patternPathList,
+			String mergedPath) {
+		try {
+			FileWriter writer = new FileWriter(mergedPath);
+			for (String path : patternPathList) {
+				File file = new File(path);
+				BufferedReader reader = new BufferedReader(new FileReader(file));
+				while (reader.ready()) {
+					writer.write(reader.readLine());
+					writer.write("\n");
+				}
+				reader.close();
+			}
+			writer.flush();
+			writer.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
 }
