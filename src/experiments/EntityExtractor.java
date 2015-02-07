@@ -112,7 +112,7 @@ public class EntityExtractor {
 		int endAt = 1;
 		String link = null;
 		for (String line : originLines) {
-			if (line.endsWith("html")) {
+			if (line.endsWith("html") || line.endsWith("htm")) {
 				if (lines != null && link != null) {
 					if (count > startFrom) {
 						fileContent.add(new CNews(link, lines));

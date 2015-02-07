@@ -6,34 +6,33 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import extractElement.RelationPattern;
 import basic.CNews;
-import basic.RelationPattern;
+import structure.Tuple;
 import util.FileUtil;
 import util.LoggerUtil;
 
 public class RelationInstanceExtractor {
 
-	private List<CNews> fileContent;
 	private Logger logger;
 
 	public static void main(String[] args) {
-		String taggedPath = "data/newsData/tagged/150122_tag.txt";
-		String relationPath = "data/newsData/relationExtraction/150120_pattern.txt";
-		String instancePath = "data/newsData/instanceExtraction/150122_tag-by-150120_pattern.txt";
+		String extractSourcePath = "data/newsData/tagged/150122_tag.txt";
+		String relationPatternPath = "data/newsData/relationExtraction/150120_seedPattern.txt";
+		String relationInstancePath = "data/newsData/instanceExtraction/150122_tag-by-150120_pattern.txt";
 		RelationInstanceExtractor rextor = new RelationInstanceExtractor();
-		// rextor.countRelation();
-		rextor.findInstancesOfPattern(taggedPath, relationPath, instancePath);
+		rextor.findInstancesOfPattern(extractSourcePath, relationPatternPath,
+				relationInstancePath);
 	}
 
 	public RelationInstanceExtractor() {
-		fileContent = new ArrayList<CNews>();
 		logger = Logger.getLogger("RelationExtractor");
 		try {
 			LoggerUtil.setLogingProperties(logger);
@@ -44,96 +43,54 @@ public class RelationInstanceExtractor {
 		}
 	}
 
-	public void findInstancesOfPattern(String taggedPath, String relationPath,
-			String instancePath) {
-		loadTaggedFile(taggedPath);
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(relationPath));
-			String line;
-			HashSet<String> originalSet = new HashSet<String>();
-			HashSet<String> dicoveredSet = new HashSet<String>();
-			RelationPattern rp = null;
-			while (br.ready()) {
-				line = br.readLine();
-				if (!line.endsWith("html")) {
-					rp = parsePattern(line);
-					originalSet.add(line);
-					dicoveredSet.addAll(extractInstanceWithPattern(rp));
-				}
-			}
-			br.close();
-			// compare two set
-			FileWriter fw = new FileWriter(instancePath);
-			for (String instance : dicoveredSet) {
-				if (!originalSet.contains(instance)) {
-					System.out.println("New discovered instance: " + instance);
-					fw.write(instance);
-					fw.write("\n");
-				}
-			}
-			fw.flush();
-			fw.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+	public void findInstancesOfPattern(String taggedPath,
+			String relationPatternPath, String relationInstancePath) {
+		// load corpus
+		List<CNews> corpus = new ArrayList<CNews>();
+		loadTaggedFile(taggedPath, corpus);
+		// load pattern
+		HashSet<RelationPattern> patternSet = new HashSet<RelationPattern>();
+		loadPatterns(relationPatternPath, patternSet);
+		// extract instances for each pattern
+		HashMap<String, Integer> relationInstancesStrMap = new HashMap<String, Integer>();
+		extractInstanceWithPatterns(patternSet, corpus, relationInstancesStrMap);
+		// export relation pattern
+		exportRelationInstances(relationInstancesStrMap, relationInstancePath);
+
+	}
+
+	private void extractInstanceWithPatterns(
+			HashSet<RelationPattern> patternSet, List<CNews> corpus,
+			HashMap<String, Integer> relationInstancesStrMap) {
+		for (RelationPattern rp : patternSet) {
+			extractInstanceWithPattern(rp, corpus, relationInstancesStrMap);
 		}
 
 	}
 
-	private HashSet<String> extractInstanceWithPattern(RelationPattern rp) {
-		int pos;
-		String[] prevTokens, nextTokens;
-		String prevWord, nextWord;
-		String instance;
-		HashSet<String> instanceSet = new HashSet<String>();
-
-		for (CNews cNews : fileContent) {
+	private void extractInstanceWithPattern(RelationPattern rp,
+			List<CNews> corpus, HashMap<String, Integer> relationInstancesStrMap) {
+		String instanceStr;
+		for (CNews cNews : corpus) {
 			for (String line : cNews.getBody()) {
-				pos = line.indexOf(rp.getPattern());
-				if (pos >= 0) {
-					// found instance
-					prevTokens = line.substring(0, pos).split(", ");
-					nextTokens = line.substring(pos + rp.getPattern().length())
-							.split(", ");
-					// the last one is empty
-					if (prevTokens.length > 1 && nextTokens.length > 2) {
-						prevWord = prevTokens[prevTokens.length - 1];
-						nextWord = nextTokens[1];
-						// check
-						if (prevWord.contains(rp.getTag1())
-								&& nextWord.contains(rp.getTag2())) {
-							instance = String.format("[%s](%s,%s)",
-									rp.getPattern(), prevWord, nextWord);
-							instanceSet.add(instance);
-						}
+				Tuple<String, String> args = rp.match(line);
+				if (args != null) {
+					instanceStr = String.format("[%s]%s", rp.getPattern(),
+							args.toString());
+					System.out.println("Extract instances: " + instanceStr);
+					if (relationInstancesStrMap.containsKey(instanceStr)) {
+						int old = relationInstancesStrMap.get(instanceStr);
+						relationInstancesStrMap.put(instanceStr, old + 1);
+					} else {
+						relationInstancesStrMap.put(instanceStr, 1);
 					}
 				}
 			}
 		}
-		return instanceSet;
 
 	}
 
-	private RelationPattern parsePattern(String line) {
-
-		String tag1, tag2;
-		String pattern;
-
-		String regex = "^\\[(.*)\\]\\((((.*)\\/(.*)),((.*)\\/(.*)))\\)$";
-		Pattern p = Pattern.compile(regex);
-		Matcher matcher = p.matcher(line);
-		boolean ret = matcher.find();
-		if (ret) {
-			pattern = matcher.group(1);
-			tag1 = matcher.group(5);
-			tag2 = matcher.group(8);
-			return new RelationPattern(pattern, tag1, tag2);
-		}
-		return null;
-	}
-
-	private void loadTaggedFile(String filePath) {
+	private void loadTaggedFile(String filePath, List<CNews> corpus) {
 		List<String> lines = null;
 		List<String> originLines = FileUtil.readFileByLine(filePath);
 		if (originLines == null) {
@@ -145,8 +102,9 @@ public class RelationInstanceExtractor {
 		for (String line : originLines) {
 			if (line.endsWith("html")) {
 				if (lines != null && link != null) {
-					fileContent.add(new CNews(link, lines));
-					logger.log(Level.INFO, String.format("load news: %s", link));
+					corpus.add(new CNews(link, lines));
+					// logger.log(Level.INFO, String.format("load news: %s",
+					// link));
 				}
 				lines = new ArrayList<String>();
 				link = line;
@@ -155,6 +113,50 @@ public class RelationInstanceExtractor {
 			}
 		}
 		logger.log(Level.INFO, String.format("Finish load file: %s", filePath));
+
+	}
+
+	private void loadPatterns(String relationPatternPath,
+			HashSet<RelationPattern> relationPatternSet) {
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(
+					relationPatternPath));
+			String line;
+			RelationPattern rp = null;
+			while (br.ready()) {
+				line = br.readLine();
+				if (!line.endsWith("html")) {
+					rp = RelationPattern.parse(line);
+					if (rp != null) {
+						relationPatternSet.add(rp);
+					}
+				}
+			}
+			br.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void exportRelationInstances(
+			HashMap<String, Integer> relationInstancesStrMap,
+			String relationInstancePath) {
+		FileWriter fw;
+		try {
+			fw = new FileWriter(relationInstancePath);
+			for (Entry<String, Integer> en : relationInstancesStrMap.entrySet()) {
+				fw.write(en.toString());
+				fw.write("\n");
+			}
+			fw.flush();
+			fw.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 	}
 
