@@ -1,4 +1,4 @@
-package relationExtract;
+package relationExtraction;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -17,7 +17,7 @@ import util.FileUtil;
 import util.LoggerUtil;
 import basic.CNews;
 import basic.CoPair;
-import extractElement.RelationInstance;
+import basic.extraction.RelationInstance;
 
 public class RelationPatternExtractor {
 

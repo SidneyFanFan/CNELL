@@ -42,12 +42,8 @@ public class CNWord {
 	 * @return
 	 */
 	public static CNWord parse(String str) {
-		String[] strSplit = str.split("/");
-		if (strSplit.length != 2) {
-			// illegal string format
-			return null;
-		}
-		return new CNWord(strSplit[0], strSplit[1]);
+		int pos = str.lastIndexOf("/");
+		return new CNWord(str.substring(0, pos), str.substring(pos + 1));
 	}
 
 	@Override

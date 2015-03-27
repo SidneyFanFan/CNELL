@@ -1,4 +1,4 @@
-package relationExtract;
+package relationExtraction;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -13,8 +13,8 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import extractElement.RelationPattern;
 import basic.CNews;
+import basic.extraction.RelationPattern;
 import structure.Tuple;
 import util.FileUtil;
 import util.LoggerUtil;

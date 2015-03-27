@@ -1,4 +1,4 @@
-package experiments;
+package entityExtraction;
 
 import edu.stanford.nlp.ie.crf.CRFClassifier;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -68,19 +68,23 @@ public class Segmentor {
 				list = new ArrayList<List<String>>();
 				fw.write(title);
 				fw.write("\n");
-				String[] texts = text.split("\n");
+				String[] texts = text.split("\n|，|。");
 				for (String seg : texts) {
+					if (seg.isEmpty()) {
+						continue;
+					}
+					seg = seg.trim();
 					List<String> segmented = segmenter.segmentString(seg);
 					list.add(segmented);
-					// fw.write(segmented.toString().replace(",", ""));
-					fw.write(segmented.toString());
+					fw.write(segmented.toString().replace(",", ""));
+					// fw.write(segmented.toString());
 					fw.write("\n");
 				}
 				segmentMap.put(title, list);
 			}
 			fw.flush();
 			fw.close();
-			System.out.println("Totally has items:" + ja.length());
+//			System.out.println("Totally has items:" + ja.length());
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (JSONException e) {

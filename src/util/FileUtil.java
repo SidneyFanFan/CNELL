@@ -2,61 +2,19 @@ package util;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jxl.Cell;
-import jxl.Sheet;
-import jxl.Workbook;
-import jxl.read.biff.BiffException;
-
 public class FileUtil {
 
 	public FileUtil() {
-	}
-
-	/**
-	 * Read sheet at certain index in an excel
-	 * 
-	 * @param filePath
-	 *            -excel path
-	 * @param sheetInex
-	 *            -sheet index
-	 * @return
-	 */
-	public String[][] readExcelSheet(String filePath, int sheetInex) {
-		String[][] sheet = null;
-		try {
-			File file = new File(filePath);
-			InputStream is = new FileInputStream(file);
-			Workbook rwb = Workbook.getWorkbook(is);
-			Sheet rs = rwb.getSheet(sheetInex);
-			int nrow = rs.getRows();
-			int ncol = rs.getColumns();
-			sheet = new String[ncol][nrow];
-			for (int i = 0; i < ncol; i++) {
-				for (int j = 0; j < nrow; j++) {
-					sheet[i][j] = rs.getCell(i, j).getContents();
-				}
-			}
-			rwb.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (BiffException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return sheet;
 	}
 
 	public static String readFile(String filePath) {
@@ -88,34 +46,6 @@ public class FileUtil {
 			e.printStackTrace();
 		}
 
-	}
-
-	public ArrayList<String[]> readExcelSheetAsRow(String filePath,
-			int sheetInex) {
-		ArrayList<String[]> rows = new ArrayList<String[]>();
-		try {
-			File file = new File(filePath);
-			InputStream is = new FileInputStream(file);
-			Workbook rwb = Workbook.getWorkbook(is);
-			Sheet rs = rwb.getSheet(sheetInex);
-			int nrow = rs.getRows();
-			for (int i = 0; i < nrow; i++) {
-				Cell[] cell = rs.getRow(i);
-				String[] row = new String[cell.length];
-				for (int j = 0; j < cell.length; j++) {
-					row[j] = cell[j].getContents().trim();
-				}
-				rows.add(row);
-			}
-			rwb.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (BiffException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return rows;
 	}
 
 	public static void outputPrologFactBase(String baseName,

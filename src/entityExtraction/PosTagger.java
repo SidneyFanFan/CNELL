@@ -1,4 +1,4 @@
-package experiments;
+package entityExtraction;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -47,7 +47,7 @@ public class PosTagger {
 				taggedList.add(tagStr);
 			}
 		}
-		System.out.println(taggedList);
+//		System.out.println(taggedList);
 		return taggedList;
 	}
 
@@ -74,7 +74,7 @@ public class PosTagger {
 					fw.write("\n");
 				} else {
 					line = line.substring(1, line.length() - 1);
-					list = tagArray(line.split(", "));
+					list = tagArray(line.split(" "));
 					fw.write(list.toString());
 					fw.write("\n");
 				}

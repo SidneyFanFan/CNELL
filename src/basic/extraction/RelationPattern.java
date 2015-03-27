@@ -1,4 +1,4 @@
-package extractElement;
+package basic.extraction;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -9,10 +9,10 @@ import basic.CNRelation;
 
 public class RelationPattern implements CNRelation,
 		CNPattern<Tuple<String, String>> {
-	private String pattern;
-	private String c1;
-	private String c2;
-	private int weight;
+	protected String pattern;
+	protected String c1;
+	protected String c2;
+	protected int weight;
 
 	public RelationPattern(String pattern, String c1, String c2, int weight) {
 		super();
