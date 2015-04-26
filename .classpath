@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/Java8Home"/>
-	<classpathentry kind="lib" path="lib/json.jar"/>
 	<classpathentry kind="lib" path="lib/stanford-postagger/stanford-postagger-3.5.0-javadoc.jar"/>
 	<classpathentry kind="lib" path="lib/stanford-postagger/stanford-postagger-3.5.0-sources.jar"/>
 	<classpathentry kind="lib" path="lib/stanford-postagger/stanford-postagger-3.5.0.jar"/>
@@ -18,5 +16,7 @@
 	<classpathentry kind="lib" path="lib/stanford-parser-full-2015-01-30/stanford-parser-3.5.1-models.jar"/>
 	<classpathentry kind="lib" path="lib/stanford-parser-full-2015-01-30/stanford-parser-3.5.1-sources.jar"/>
 	<classpathentry kind="lib" path="lib/stanford-parser-full-2015-01-30/stanford-parser.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/json-20140107.jar" sourcepath="/Users/apple/.m2/repository/org/json/json/20140107/json-20140107-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
